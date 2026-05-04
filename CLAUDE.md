@@ -6,6 +6,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 AI-based container security system that detects attacks in real-time using syscall analysis.
 
+## ⚠️ 개발 시작 전 필수 설치
+
+shell 스크립트(`normal_traffic.sh`, `attack_simulator.sh`) 실행 전에 아래 도구가 모두 설치되어 있어야 한다. 이 단계가 완료되어야 실제 데이터 수집이 가능하고, 이후 preprocessing → 모델 학습으로 이어진다.
+
+| 도구 | 설치 명령 | 상태 |
+|------|-----------|------|
+| minikube | `winget install Kubernetes.minikube` | 미설치 |
+| helm | `winget install Helm.Helm` | 미설치 |
+| kubectl | `winget install Kubernetes.kubectl` | 완료 |
+| docker | Docker Desktop | 완료 |
+
+설치 후 진행 순서:
+
+```
+1. minikube start
+2. helm install falco (Falco로 syscall 수집)
+3. kubectl apply -f k8s/ (nginx, redis, webapp pod 배포)
+4. bash data_collection/normal_traffic.sh
+5. bash data_collection/attack_simulator.sh
+6. python data_collection/falco_to_csv.py
+7. python data_collection/auto_labeling.py
+```
+
 ## Git Workflow
 
 - 기능 단위로 브랜치를 생성해 개발한다: `git checkout -b feature/<name>`
