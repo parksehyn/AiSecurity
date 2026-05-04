@@ -23,6 +23,37 @@ main
  └── feature/dashboard
 ```
 
+## 환경변수 관리
+
+시크릿(토큰, API 키)은 `.env` 파일로 관리한다. `.env`는 `.gitignore`에 포함되어 커밋되지 않는다.
+
+```bash
+# 최초 설정
+cp .env.example .env
+# .env 파일에 실제 값 입력
+```
+
+```
+# .env
+GITHUB_TOKEN=ghp_...
+GITHUB_REPO=parksehyn/AiSecurity
+```
+
+GitHub API 호출은 `scripts/gh_api.ps1`의 `Invoke-GhApi` 헬퍼를 사용한다:
+
+```powershell
+. .\scripts\gh_api.ps1
+
+Invoke-GhApi -Method Post -Endpoint "/issues" -Body @{
+    title = "feat: 새 기능"
+    body  = "..."
+}
+```
+
+- `.env.example`은 커밋 대상 — 키 이름만 적고 값은 비워둔다
+- `.env`는 로컬 전용 — 절대 커밋하지 않는다
+- 토큰을 채팅/코드에 직접 노출했다면 즉시 폐기 후 재발급한다
+
 ## How Claude Should Work
 
 ### 1. Think Before Coding
