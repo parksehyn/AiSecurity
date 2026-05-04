@@ -6,6 +6,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 AI-based container security system that detects attacks in real-time using syscall analysis.
 
+## Git Workflow
+
+- 기능 단위로 브랜치를 생성해 개발한다: `git checkout -b feature/<name>`
+- 브랜치에서 개발 → 테스트 통과 확인 → PR 생성 순서를 따른다
+- PR은 테스트가 완수된 이후에만 요청한다
+- `main` 브랜치에 직접 커밋하지 않는다
+
+```
+main
+ └── feature/data-collection
+ └── feature/preprocessing
+ └── feature/train-rf
+ └── feature/train-lstm
+ └── feature/api
+ └── feature/dashboard
+```
+
 ## How Claude Should Work
 
 ### 1. Think Before Coding
