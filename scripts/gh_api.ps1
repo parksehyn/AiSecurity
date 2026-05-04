@@ -37,6 +37,7 @@ function Invoke-GhApi {
         return Invoke-RestMethod -Uri $uri -Method $Method -Headers $headers
     }
 
+    $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes(($Body | ConvertTo-Json -Depth 5))
     return Invoke-RestMethod -Uri $uri -Method $Method -Headers $headers `
-        -Body ($Body | ConvertTo-Json -Depth 5) -ContentType "application/json"
+        -Body $bodyBytes -ContentType "application/json; charset=utf-8"
 }
