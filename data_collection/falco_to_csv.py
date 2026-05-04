@@ -35,6 +35,9 @@ def parse_event(line: str) -> dict | None:
     except json.JSONDecodeError:
         return None
 
+    if not event.get("time"):
+        return None
+
     fields = event.get("output_fields", {})
     return {
         "timestamp":      event.get("time", ""),
