@@ -18,10 +18,9 @@ def parse_windows(raw: list[str]) -> list[tuple[datetime, datetime]]:
     windows = []
     for entry in raw:
         start_str, end_str = entry.split(",")
-        windows.append((
-            datetime.fromisoformat(start_str.strip()),
-            datetime.fromisoformat(end_str.strip()),
-        ))
+        start = datetime.fromisoformat(start_str.strip().replace("Z", "+00:00")).replace(tzinfo=None)
+        end = datetime.fromisoformat(end_str.strip().replace("Z", "+00:00")).replace(tzinfo=None)
+        windows.append((start, end))
     return windows
 
 
