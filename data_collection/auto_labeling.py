@@ -35,7 +35,7 @@ def assign_label(ts: datetime, windows: list[tuple[datetime, datetime]]) -> int:
 def label_csv(input_path: str, output_path: str, windows: list[tuple[datetime, datetime]]) -> None:
     df = pd.read_csv(input_path)
 
-    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_localize(None)
+    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(None)
     df["label"] = df["timestamp"].apply(lambda ts: assign_label(ts, windows))
 
     df.to_csv(output_path, index=False)
