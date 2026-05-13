@@ -39,13 +39,16 @@ def parse_event(line: str) -> dict | None:
         return None
 
     fields = event.get("output_fields", {})
+    container_name = fields.get("container.name", "")
+    if container_name == "host":
+        return None
     return {
         "timestamp":      event.get("time", ""),
         "priority":       event.get("priority", ""),
         "rule":           event.get("rule", ""),
         "syscall":        fields.get("evt.type", ""),
         "proc_name":      fields.get("proc.name", ""),
-        "container_name": fields.get("container.name", ""),
+        "container_name": container_name,
         "fd_name":        fields.get("fd.name", ""),
     }
 
