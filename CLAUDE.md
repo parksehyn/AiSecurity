@@ -103,6 +103,31 @@ PR 제목: `feat: <기능명> (#<이슈번호>)`
 - 공격 시뮬레이션은 minikube 내부에서만 실행
 - `data/`, `models/saved/`는 `.gitignore`에 포함 — 원시 데이터/모델 커밋 금지
 
+## 현재 진행 상황 & 다음 단계
+
+### 완료
+- `feature/data-collection` 브랜치: `falco_to_csv.py`, `auto_labeling.py`, `normal_traffic_docker.sh`, `attack_simulator_docker.sh` 구현 완료
+- VirtualBox Ubuntu VM에 Falco Modern eBPF 설치 → Docker 컨테이너 syscall 수집 확인
+- `~/falco_raw.log` → `~/events.csv` → `~/labeled.csv` 파이프라인 동작 확인
+
+### 데이터 환경 (VM)
+- VM: VirtualBox Ubuntu, Falco Modern eBPF (`falco-modern-bpf.service`)
+- 컨테이너: `docker ps` → nginx, redis 실행 중
+- 데이터 파일: `~/events.csv`, `~/labeled.csv` (VM 홈 디렉토리)
+- 데이터 부족 (31개) → VM에서 `attack_simulator_docker.sh` 반복 실행 후 재수집 필요
+
+### 다음 단계: `feature/preprocessing` 브랜치
+
+```
+1. git checkout -b feature/preprocessing
+2. preprocessing/label_encoding.py   — syscall, proc_name, container_name LabelEncoding
+3. preprocessing/sliding_window.py   — 30초 윈도우 집계
+4. preprocessing/feature_engineering.py — 5개 통계 피처 추출
+5. preprocessing/train_test_split.py — 8:2, shuffle=False, stratify=y
+```
+
+입력: `labeled.csv` / 출력: `X_train.npy`, `X_test.npy`, `y_train.npy`, `y_test.npy`
+
 ## 핵심 설계 결정
 
 **레이블 혼동 주의:** ground truth label(0=정상, 1=공격)과 LabelEncoding(범주형 피처 인코딩)은 완전히 별개의 단계다.
