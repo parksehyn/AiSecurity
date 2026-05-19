@@ -26,9 +26,11 @@ sudo apt-get install -y python3-venv
 python3 -m venv "$APP_DIR/.venv"
 "$APP_DIR/.venv/bin/pip" install -r "$APP_DIR/requirements.txt"
 
-# --- Falco 시작 (Modern eBPF, JSON 출력) ---
+# --- Falco 드라이버 설치 및 시작 ---
+echo "[setup] Falco 드라이버 설치..."
+sudo falcoctl driver install
 echo "[setup] Falco 시작..."
-sudo nohup falco --modern-bpf -o json_output=true >> "$HOME/falco_raw.log" 2>&1 &
+sudo nohup falco -o json_output=true >> "$HOME/falco_raw.log" 2>&1 &
 sleep 3
 echo "[setup] Falco PID: $(pgrep falco || echo 'not found')"
 
