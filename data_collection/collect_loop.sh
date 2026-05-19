@@ -12,8 +12,7 @@ WINDOWS_FILE="$HOME/attack_windows.txt"
 NORMAL_SECS=600   # 공격 사이 정상 트래픽 시간 (초)
 ROUNDS=${1:-20}
 
-> "$WINDOWS_FILE"
-echo "[collect_loop] 시작: $(date '+%Y-%m-%d %H:%M:%S'), ${ROUNDS}라운드"
+echo "[collect_loop] 시작: $(date '+%Y-%m-%d %H:%M:%S'), ${ROUNDS}라운드 (기존 윈도우 이어쓰기)"
 
 for round in $(seq 1 "$ROUNDS"); do
     echo "[round $round/$ROUNDS] 정상 트래픽 (${NORMAL_SECS}s)..."
