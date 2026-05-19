@@ -26,13 +26,6 @@ echo "[setup] 레포 클론..."
 git clone -b feature/data-collection "$REPO" "$APP_DIR"
 pip3 install -r "$APP_DIR/requirements.txt"
 
-# --- 컨테이너 시작 ---
-echo "[setup] nginx, redis 컨테이너 시작..."
-# usermod 후 소켓 권한 반영을 위해 sg 사용
-sg docker -c "docker run -d --name nginx nginx:alpine || docker start nginx"
-sg docker -c "docker run -d --name redis redis:alpine || docker start redis"
-sleep 5
-
 # --- Falco 시작 (Modern eBPF, JSON 출력) ---
 echo "[setup] Falco 시작..."
 sudo nohup falco --modern-bpf -o json_output=true >> "$HOME/falco_raw.log" 2>&1 &
