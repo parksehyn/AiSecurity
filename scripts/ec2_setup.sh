@@ -16,15 +16,15 @@ https://download.falco.org/packages/deb stable main" \
 sudo apt-get update -q
 sudo apt-get install -y falco
 
-# --- Python ---
-echo "[setup] Python 패키지 설치..."
-sudo apt-get install -y python3-pip
-pip3 install -r "$APP_DIR/requirements.txt" 2>/dev/null || true  # 레포 클론 후 재실행
-
 # --- 레포 클론 ---
 echo "[setup] 레포 클론..."
 git clone -b feature/data-collection "$REPO" "$APP_DIR"
-pip3 install -r "$APP_DIR/requirements.txt"
+
+# --- Python venv ---
+echo "[setup] Python 가상환경 생성 및 패키지 설치..."
+sudo apt-get install -y python3-venv
+python3 -m venv "$APP_DIR/.venv"
+"$APP_DIR/.venv/bin/pip" install -r "$APP_DIR/requirements.txt"
 
 # --- Falco 시작 (Modern eBPF, JSON 출력) ---
 echo "[setup] Falco 시작..."
