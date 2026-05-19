@@ -23,7 +23,7 @@ pip3 install -r "$APP_DIR/requirements.txt" 2>/dev/null || true  # 레포 클론
 
 # --- 레포 클론 ---
 echo "[setup] 레포 클론..."
-git clone "$REPO" "$APP_DIR"
+git clone -b feature/data-collection "$REPO" "$APP_DIR"
 pip3 install -r "$APP_DIR/requirements.txt"
 
 # --- 컨테이너 시작 ---
