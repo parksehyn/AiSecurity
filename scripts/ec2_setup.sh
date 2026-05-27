@@ -9,16 +9,16 @@ APP_DIR="$HOME/AiSecurity"
 # --- Docker ---
 echo "[setup] Docker 설치..."
 sudo apt-get update -q
-sudo apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
-    | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] \
-https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
-    | sudo tee /etc/apt/sources.list.d/docker.list
-sudo apt-get update -q
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+sudo apt-get install -y docker.io
+sudo systemctl start docker
 sudo usermod -aG docker "$USER"
-sudo systemctl enable --now docker
+
+# --- 컨테이너 기동 (sudo로 실행 — 그룹 재로그인 불필요) ---
+echo "[setup] nginx, redis 컨테이너 시작..."
+sudo docker run -d --name nginx --restart unless-stopped nginx:alpine
+sudo docker run -d --name redis --restart unless-stopped redis:alpine
+echo "[setup] 컨테이너 상태:"
+sudo docker ps --format "  {{.Names}}\t{{.Status}}"
 
 # --- Falco ---
 echo "[setup] Falco 설치..."
@@ -30,32 +30,27 @@ https://download.falco.org/packages/deb stable main" \
 sudo apt-get update -q
 sudo apt-get install -y falco
 
-# --- Python ---
-echo "[setup] Python 패키지 설치..."
-sudo apt-get install -y python3-pip
-pip3 install -r "$APP_DIR/requirements.txt" 2>/dev/null || true  # 레포 클론 후 재실행
-
 # --- 레포 클론 ---
 echo "[setup] 레포 클론..."
-git clone "$REPO" "$APP_DIR"
-pip3 install -r "$APP_DIR/requirements.txt"
+git clone -b feature/data-collection "$REPO" "$APP_DIR"
 
-# --- 컨테이너 시작 ---
-echo "[setup] nginx, redis 컨테이너 시작..."
-# usermod 후 소켓 권한 반영을 위해 sg 사용
-sg docker -c "docker run -d --name nginx nginx:alpine || docker start nginx"
-sg docker -c "docker run -d --name redis redis:alpine || docker start redis"
-sleep 5
+# --- Python venv ---
+echo "[setup] Python 가상환경 생성 및 패키지 설치..."
+sudo apt-get install -y python3-venv
+python3 -m venv "$APP_DIR/.venv"
+"$APP_DIR/.venv/bin/pip" install -r "$APP_DIR/requirements.txt"
 
-# --- Falco 시작 (Modern eBPF, JSON 출력) ---
+# --- Falco 드라이버 설치 및 시작 ---
+echo "[setup] Falco 드라이버 설치..."
+sudo falcoctl driver install
 echo "[setup] Falco 시작..."
-sudo nohup falco --modern-bpf -o json_output=true >> "$HOME/falco_raw.log" 2>&1 &
+sudo nohup falco -o json_output=true >> "$HOME/falco_raw.log" 2>&1 &
 sleep 3
 echo "[setup] Falco PID: $(pgrep falco || echo 'not found')"
 
 # --- 수집 루프 시작 ---
 echo "[setup] 데이터 수집 루프 시작 (20라운드)..."
-nohup bash "$APP_DIR/data_collection/collect_loop.sh" 20 >> "$HOME/collect.log" 2>&1 &
+sg docker -c "nohup bash '$APP_DIR/data_collection/collect_loop.sh' 20 >> '$HOME/collect.log' 2>&1 &"
 
 echo ""
 echo "[setup] 완료. 진행 확인:"

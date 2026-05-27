@@ -7,12 +7,12 @@
 set -uo pipefail
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
+PYTHON="$(dirname "$DIR")/.venv/bin/python"
 WINDOWS_FILE="$HOME/attack_windows.txt"
 NORMAL_SECS=600   # 공격 사이 정상 트래픽 시간 (초)
 ROUNDS=${1:-20}
 
-> "$WINDOWS_FILE"
-echo "[collect_loop] 시작: $(date '+%Y-%m-%d %H:%M:%S'), ${ROUNDS}라운드"
+echo "[collect_loop] 시작: $(date '+%Y-%m-%d %H:%M:%S'), ${ROUNDS}라운드 (기존 윈도우 이어쓰기)"
 
 for round in $(seq 1 "$ROUNDS"); do
     echo "[round $round/$ROUNDS] 정상 트래픽 (${NORMAL_SECS}s)..."
@@ -32,7 +32,7 @@ done
 
 echo "[collect_loop] 완료. 데이터 처리 시작..."
 
-python3 "$DIR/falco_to_csv.py" --input "$HOME/falco_raw.log" --output "$HOME/events.csv"
+"$PYTHON" "$DIR/falco_to_csv.py" --input "$HOME/falco_raw.log" --output "$HOME/events.csv"
 
 mapfile -t WINDOWS < "$WINDOWS_FILE"
 WINDOWS_ARGS=()
@@ -40,7 +40,7 @@ for w in "${WINDOWS[@]}"; do
     WINDOWS_ARGS+=("$w")
 done
 
-python3 "$DIR/auto_labeling.py" \
+"$PYTHON" "$DIR/auto_labeling.py" \
     --input "$HOME/events.csv" \
     --output "$HOME/labeled.csv" \
     --attack-windows "${WINDOWS_ARGS[@]}"
