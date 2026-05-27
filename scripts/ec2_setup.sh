@@ -6,6 +6,20 @@ set -euo pipefail
 REPO="https://github.com/parksehyn/AiSecurity.git"
 APP_DIR="$HOME/AiSecurity"
 
+# --- Docker ---
+echo "[setup] Docker 설치..."
+sudo apt-get update -q
+sudo apt-get install -y docker.io
+sudo systemctl start docker
+sudo usermod -aG docker "$USER"
+
+# --- 컨테이너 기동 (sudo로 실행 — 그룹 재로그인 불필요) ---
+echo "[setup] nginx, redis 컨테이너 시작..."
+sudo docker run -d --name nginx --restart unless-stopped nginx:alpine
+sudo docker run -d --name redis --restart unless-stopped redis:alpine
+echo "[setup] 컨테이너 상태:"
+sudo docker ps --format "  {{.Names}}\t{{.Status}}"
+
 # --- Falco ---
 echo "[setup] Falco 설치..."
 curl -fsSL https://falco.org/repo/falcosecurity-packages.asc \
@@ -36,7 +50,7 @@ echo "[setup] Falco PID: $(pgrep falco || echo 'not found')"
 
 # --- 수집 루프 시작 ---
 echo "[setup] 데이터 수집 루프 시작 (20라운드)..."
-nohup bash "$APP_DIR/data_collection/collect_loop.sh" 20 >> "$HOME/collect.log" 2>&1 &
+sg docker -c "nohup bash '$APP_DIR/data_collection/collect_loop.sh' 20 >> '$HOME/collect.log' 2>&1 &"
 
 echo ""
 echo "[setup] 완료. 진행 확인:"
