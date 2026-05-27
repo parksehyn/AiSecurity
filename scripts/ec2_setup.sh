@@ -32,7 +32,7 @@ sudo apt-get install -y falco
 
 # --- 레포 클론 ---
 echo "[setup] 레포 클론..."
-git clone -b feature/data-collection "$REPO" "$APP_DIR"
+git clone -b main "$REPO" "$APP_DIR"
 
 # --- Python venv ---
 echo "[setup] Python 가상환경 생성 및 패키지 설치..."
