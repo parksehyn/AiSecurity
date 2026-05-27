@@ -44,16 +44,19 @@ python3 -m venv "$APP_DIR/.venv"
 echo "[setup] Falco 드라이버 설치..."
 sudo falcoctl driver install
 echo "[setup] Falco 시작..."
-sudo nohup falco -o json_output=true >> "$HOME/falco_raw.log" 2>&1 &
-sleep 3
+sudo falco \
+    -o engine.kind=modern_ebpf \
+    -o json_output=true \
+    -o file_output.enabled=true \
+    -o "file_output.filename=$HOME/falco_raw.log" \
+    -o file_output.keep_alive=false \
+    2>/dev/null &
+sleep 5
 echo "[setup] Falco PID: $(pgrep falco || echo 'not found')"
 
-# --- 수집 루프 시작 ---
-echo "[setup] 데이터 수집 루프 시작 (20라운드)..."
-sg docker -c "nohup bash '$APP_DIR/data_collection/collect_loop.sh' 20 >> '$HOME/collect.log' 2>&1 &"
-
 echo ""
-echo "[setup] 완료. 진행 확인:"
-echo "  tail -f ~/collect.log        # 수집 진행 상황"
-echo "  tail -f ~/falco_raw.log      # Falco 원시 로그"
-echo "  cat ~/attack_windows.txt     # 기록된 공격 윈도우"
+echo "[setup] 완료."
+echo "  docker 그룹 적용을 위해 재접속 후 아래 명령 실행:"
+echo ""
+echo "  nohup bash '$APP_DIR/data_collection/collect_loop.sh' 20 >> \$HOME/collect.log 2>&1 &"
+echo "  tail -f ~/collect.log"
