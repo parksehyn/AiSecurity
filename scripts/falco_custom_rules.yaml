@@ -1,0 +1,39 @@
+- rule: Container baseline execve
+  desc: Track process execution in containers for ML baseline
+  condition: >
+    container.id != host
+    and evt.type = execve
+    and not container.name = ""
+  output: >
+    Container execve (user=%user.name proc=%proc.name
+    container=%container.name image=%container.image.repository
+    cmd=%proc.cmdline)
+  priority: INFO
+  tags: [baseline, container]
+
+- rule: Container baseline open
+  desc: Track file opens in containers for ML baseline
+  condition: >
+    container.id != host
+    and evt.type = open
+    and not container.name = ""
+    and not fd.name startswith /proc
+    and not fd.name startswith /sys
+    and not fd.name = ""
+  output: >
+    Container file open (user=%user.name proc=%proc.name
+    container=%container.name file=%fd.name)
+  priority: INFO
+  tags: [baseline, container]
+
+- rule: Container baseline connect
+  desc: Track network connections in containers for ML baseline
+  condition: >
+    container.id != host
+    and evt.type = connect
+    and not container.name = ""
+  output: >
+    Container connect (user=%user.name proc=%proc.name
+    container=%container.name fd=%fd.name)
+  priority: INFO
+  tags: [baseline, container]
