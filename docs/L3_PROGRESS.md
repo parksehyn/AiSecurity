@@ -11,7 +11,7 @@ protection: 자유롭게 수정 가능
 ---
 
 ## 현재 브랜치
-`feature/data-collection` (preprocessing 진행 중)
+`feature/dashboard` (Streamlit 대시보드 진행 중)
 
 ---
 
@@ -23,6 +23,11 @@ protection: 자유롭게 수정 가능
 - [x] **데이터 수집 완료** — 8라운드 collect_loop.sh 실행 (VM 종료로 중단), labeled.csv 생성 → `data/labeled.csv` 로컬 확보
 - [x] `scripts/falco_watchdog.sh` 추가 — Falco 크래시 시 자동 재시작
 - [x] `preprocessing/preprocess.py` 작성 — 단일 스크립트로 전처리 전 단계 처리
+- [x] `preprocessing/preprocess.py` VM 실행 완료 — 397 윈도우, train/test 317/80
+- [x] `models/train_rf.py` 작성 및 VM 실행 — 전 지표 목표 달성 (Precision 0.95 / Recall 0.95 / F1 0.95 / FPR 0.017 / AUC 0.996)
+- [x] `models/train_lstm.py` 작성 및 Colab 실행 — 2/5 목표 달성 (데이터 부족, RF 우세 확인)
+- [x] `models/compare_models.py` 작성 — RF vs LSTM 나란히 비교, RF 우세 결론 도출
+- [x] `service/api/` 작성 — FastAPI `/detect`, `/health` 엔드포인트 로컬 실행 확인
 
 ---
 
@@ -56,35 +61,27 @@ protection: 자유롭게 수정 가능
 
 ## 다음 단계
 
-### Step 1: 전처리 실행 (VM 또는 로컬)
-
-```bash
-# VM에서 (패키지 설치 후)
-.venv/bin/pip install -r requirements.txt
-.venv/bin/python preprocessing/preprocess.py \
-    --input ~/labeled.csv \
-    --output-dir ~/data
-```
-
-**입력:** `data/labeled.csv`
-**출력:** `data/X_train.npy`, `data/X_test.npy`, `data/y_train.npy`, `data/y_test.npy`, `data/scaler.pkl`, `data/encoders.pkl`
-
-> `stratify=None` — sklearn은 `shuffle=False`와 `stratify` 동시 사용 불가.
-> 시계열 순서 보존(`shuffle=False`)이 우선이므로 stratify 포기.
-
-### Step 2: npy 로컬 복사 후 모델 학습 브랜치
-```powershell
-scp -P 2222 user32211690@127.0.0.1:~/data/*.npy E:\dhapr\Downloads\AiSecurity\data\
-scp -P 2222 user32211690@127.0.0.1:~/data/*.pkl E:\dhapr\Downloads\AiSecurity\data\
-```
+### Step 1: Streamlit 대시보드 (`service/dashboard/app.py`)
+- FastAPI `/detect` 엔드포인트 연동
+- 실시간 탐지 결과 시각화
+- 최근 이벤트 로그 테이블
 
 ---
 
+## 한계 및 관찰
+
+| 항목 | 내용 |
+|------|------|
+| 윈도우 수 부족 | 397개 윈도우로 RF 결정 경계 불안정 — `unique_processes=1` 같은 정상 패턴도 공격으로 오분류 가능 |
+| LSTM 성능 미달 | 시퀀스 구성 후 test 샘플 50개로 통계 불안정, 데이터 추가 시 개선 여지 있음 |
+| 데이터 편향 | 공격 시뮬레이션이 특정 패턴에 집중 — 실제 공격 다양성 미반영 |
+
+> 데이터 수집량 증가(목표 50,000 윈도우 이상) 시 위 한계 해소 가능
+
 ## 미결 사항
 
-- `preprocess.py` VM에서 실행 미완료 (패키지 설치 후 실행 필요)
-- npy 파일 로컬 복사 미완료
-- minikube, helm 미설치 (서비스 배포 단계에서 도입 예정 — 현재 수집/학습에는 불필요)
+- Streamlit 대시보드 미완료
+- minikube, helm 미설치 (서비스 배포 단계에서 도입 예정)
 
 ---
 

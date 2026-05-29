@@ -12,16 +12,21 @@ _model  = None
 _scaler = None
 
 
-def _load():
+def load():
     global _model, _scaler
-    if _model is None:
+    try:
         _model  = joblib.load(os.path.join(SAVE_DIR, "rf_model.pkl"))
         _scaler = joblib.load(os.path.join(SAVE_DIR, "scaler.pkl"))
+    except FileNotFoundError as e:
+        raise RuntimeError(f"Model file not found: {e}") from e
+
+
+def is_loaded() -> bool:
+    return _model is not None
 
 
 def predict(event: dict) -> tuple[int, float]:
     """Return (pred, prob) for a single event window."""
-    _load()
     features = [event.get(f, 0) for f in FEATURES]
     scaled = _scaler.transform([features])
     pred = int(_model.predict(scaled)[0])
