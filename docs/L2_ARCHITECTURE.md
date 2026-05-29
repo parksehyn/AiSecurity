@@ -15,9 +15,11 @@ protection: 수정 시 L3 전부 재검토 강제 (doc-guardian 실행)
 
 | 레이어 | 기술 |
 |--------|------|
-| 데이터 수집 | minikube, Falco, Helm |
+| 데이터 수집 | VirtualBox Ubuntu VM, Docker (nginx/redis), Falco Modern eBPF |
 | 처리·학습 | Python 3.11, scikit-learn, TensorFlow, pandas |
 | 서비스 | FastAPI, Streamlit |
+
+> minikube/Helm은 서비스 배포 단계에서 도입 예정. 현재 데이터 수집 환경은 VirtualBox VM + Docker.
 
 ---
 
@@ -29,12 +31,14 @@ Falco JSON
 events.csv  (7컬럼 스키마)
     ↓ auto_labeling.py
 labeled.csv (8컬럼: +label)
-    ↓ preprocessing/
-    │   filter.py               container_name == 'host' 제거 (최초 단계)
-    │   label_encoding.py       범주형 3개 컬럼 인코딩
-    │   sliding_window.py       30초 윈도우 집계
-    │   feature_engineering.py  5개 통계 피처 추출
-    │   train_test_split.py     8:2, shuffle=False
+    ↓ preprocessing/preprocess.py  (단일 스크립트로 아래 전 단계 처리)
+    │   1. host 이벤트 필터링      container_name == 'host' 제거 (falco_to_csv에서도 수행)
+    │   2. LabelEncoding           syscall, proc_name, container_name → 정수
+    │   3. 30초 윈도우 집계        window × container_name 그룹
+    │   4. 5개 피처 추출           event_count, unique_syscalls, unique_processes,
+    │                               critical_count, sensitive_access (윈도우별 집계 통계)
+    │   5. train/test split        8:2, shuffle=False (시계열 순서 보존)
+    │   6. StandardScaler          train fit, test transform-only
     ↓
 X_train.npy / X_test.npy / y_train.npy / y_test.npy
     ↓ models/
@@ -96,10 +100,8 @@ LabelEncoder를 `label` 컬럼에 적용하지 않는다.
 
 ### 호스트 이벤트 오염
 시간 기반 레이블링은 timestamp만 보므로, 공격 윈도우 밖 호스트 OS 정상 동작이 label=0으로 잘못 분류될 수 있다.
-전처리 최초 단계에서 반드시 필터링:
-```python
-df = df[df["container_name"] != "host"]
-```
+host 필터링은 `falco_to_csv.py`에서 이미 처리한다. `preprocess.py`에 추가 필터를 넣어도 무해하지만 중복이다.
+실질적 보호: falco_to_csv.py의 `if container_name == "host": return None`
 
 ### 슬라이딩 윈도우
 30초 윈도우로 집계. LSTM은 30개 윈도우를 시퀀스로 입력 → **30초 × 30개 = 15분 시퀀스**.

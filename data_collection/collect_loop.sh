@@ -21,10 +21,10 @@ for round in $(seq 1 "$ROUNDS"); do
         bash "$DIR/normal_traffic_docker.sh" > /dev/null 2>&1 || true
     done
 
-    ATTACK_START=$(date '+%Y-%m-%d %H:%M:%S')
+    ATTACK_START=$(date -u '+%Y-%m-%d %H:%M:%S')
     echo "[round $round/$ROUNDS] 공격 시작: $ATTACK_START"
     bash "$DIR/attack_simulator_docker.sh" > /dev/null 2>&1 || true
-    ATTACK_END=$(date '+%Y-%m-%d %H:%M:%S')
+    ATTACK_END=$(date -u '+%Y-%m-%d %H:%M:%S')
     echo "[round $round/$ROUNDS] 공격 완료: $ATTACK_END"
 
     echo "${ATTACK_START},${ATTACK_END}" >> "$WINDOWS_FILE"

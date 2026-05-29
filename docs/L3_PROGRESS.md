@@ -11,17 +11,18 @@ protection: 자유롭게 수정 가능
 ---
 
 ## 현재 브랜치
-`main` (data-collection PR #4 머지 완료)
+`feature/data-collection` (preprocessing 진행 중)
 
 ---
 
 ## 완료 항목
 
-- [x] `feature/data-collection`: `falco_to_csv.py`, `auto_labeling.py`, `normal_traffic_docker.sh`, `attack_simulator_docker.sh`, `collect_loop.sh` — PR #4 main 머지 완료
-- [x] `fix/ec2-setup-clone-branch`: `ec2_setup.sh` 수정 (브랜치명, Falco file_output, sg 제거, watchdog) — main 머지 완료
+- [x] `feature/data-collection`: `falco_to_csv.py`, `auto_labeling.py`, `normal_traffic_docker.sh`, `attack_simulator_docker.sh`, `collect_loop.sh`
+- [x] `fix/ec2-setup-clone-branch`: `ec2_setup.sh` 수정 (브랜치명, Falco file_output, sg 제거, watchdog)
 - [x] VirtualBox Ubuntu 26.04 VM 신규 설치 — Docker, Falco Modern eBPF, nginx/redis 컨테이너 세팅 완료
-- [x] **데이터 수집 완료** — 20라운드 collect_loop.sh 실행, labeled.csv 생성
+- [x] **데이터 수집 완료** — 8라운드 collect_loop.sh 실행 (VM 종료로 중단), labeled.csv 생성 → `data/labeled.csv` 로컬 확보
 - [x] `scripts/falco_watchdog.sh` 추가 — Falco 크래시 시 자동 재시작
+- [x] `preprocessing/preprocess.py` 작성 — 단일 스크립트로 전처리 전 단계 처리
 
 ---
 
@@ -32,13 +33,13 @@ protection: 자유롭게 수정 가능
 | VM | VirtualBox Ubuntu 26.04 |
 | Falco | Modern eBPF 0.44.0, watchdog으로 자동 재시작 |
 | 실행 컨테이너 | nginx:alpine, redis:alpine |
-| 총 이벤트 | 712개 |
-| label=1 (공격) | 633개 (89%) |
-| label=0 (정상) | 79개 (11%) |
-| 공격 윈도우 수 | 39개 |
-| labeled.csv 위치 | VM `~/labeled.csv` → Windows `data/labeled.csv` (scp 대기 중) |
+| 총 이벤트 | 214,962개 |
+| label=1 (공격) | 95,588개 (44.5%) |
+| label=0 (정상) | 119,374개 (55.5%) |
+| 공격 윈도우 수 | 8개 |
+| labeled.csv 위치 | `data/labeled.csv` ✅ |
 
-**주의: label 불균형 심함 (89:11)** → preprocessing/training 단계에서 `class_weight='balanced'` 또는 언더샘플링 필요
+**label 균형 양호 (55:45)** — `class_weight='balanced'` 선택사항 (불필요할 수도 있음, 윈도우 집계 후 재확인)
 
 ---
 
@@ -55,36 +56,35 @@ protection: 자유롭게 수정 가능
 
 ## 다음 단계
 
-### Step 1: labeled.csv Windows로 복사
-```powershell
-# Windows PowerShell에서
-mkdir C:\Users\dhapr\AiSecurity\data -Force
-scp -P 2222 user32211690@127.0.0.1:~/labeled.csv C:\Users\dhapr\AiSecurity\data\labeled.csv
-```
+### Step 1: 전처리 실행 (VM 또는 로컬)
 
-### Step 2: `feature/preprocessing` 브랜치
 ```bash
-git checkout -b feature/preprocessing
+# VM에서 (패키지 설치 후)
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python preprocessing/preprocess.py \
+    --input ~/labeled.csv \
+    --output-dir ~/data
 ```
-
-| 순서 | 파일 | 역할 |
-|------|------|------|
-| 1 | `preprocessing/filter.py` | container_name == 'host' 제거 |
-| 2 | `preprocessing/label_encoding.py` | syscall, proc_name, container_name LabelEncoding |
-| 3 | `preprocessing/sliding_window.py` | 30초 윈도우 집계 |
-| 4 | `preprocessing/feature_engineering.py` | 5개 통계 피처 추출 |
-| 5 | `preprocessing/train_test_split.py` | 8:2, shuffle=False, stratify=y |
 
 **입력:** `data/labeled.csv`
-**출력:** `data/X_train.npy`, `data/X_test.npy`, `data/y_train.npy`, `data/y_test.npy`
+**출력:** `data/X_train.npy`, `data/X_test.npy`, `data/y_train.npy`, `data/y_test.npy`, `data/scaler.pkl`, `data/encoders.pkl`
+
+> `stratify=None` — sklearn은 `shuffle=False`와 `stratify` 동시 사용 불가.
+> 시계열 순서 보존(`shuffle=False`)이 우선이므로 stratify 포기.
+
+### Step 2: npy 로컬 복사 후 모델 학습 브랜치
+```powershell
+scp -P 2222 user32211690@127.0.0.1:~/data/*.npy E:\dhapr\Downloads\AiSecurity\data\
+scp -P 2222 user32211690@127.0.0.1:~/data/*.pkl E:\dhapr\Downloads\AiSecurity\data\
+```
 
 ---
 
 ## 미결 사항
 
-- labeled.csv Windows 복사 미완료 (scp 대기 중)
-- label 불균형 (89:11) — preprocessing 단계에서 처리 필요
-- minikube, helm 미설치 (현재 VM Docker 환경으로 대체 중)
+- `preprocess.py` VM에서 실행 미완료 (패키지 설치 후 실행 필요)
+- npy 파일 로컬 복사 미완료
+- minikube, helm 미설치 (서비스 배포 단계에서 도입 예정 — 현재 수집/학습에는 불필요)
 
 ---
 
