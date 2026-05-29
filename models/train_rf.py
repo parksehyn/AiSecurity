@@ -3,8 +3,9 @@
 
 import argparse
 import os
-import pickle
+import shutil
 
+import joblib
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
@@ -63,12 +64,17 @@ def _check_target(metric: str, value: float) -> bool:
     return value >= targets.get(metric, 0)
 
 
-def save_model(model: RandomForestClassifier, save_dir: str) -> None:
+def save_model(model: RandomForestClassifier, save_dir: str, data_dir: str) -> None:
     os.makedirs(save_dir, exist_ok=True)
-    path = os.path.join(save_dir, "rf_model.pkl")
-    with open(path, "wb") as f:
-        pickle.dump(model, f)
-    print(f"\n[train_rf] model saved → {path}")
+
+    model_path = os.path.join(save_dir, "rf_model.pkl")
+    joblib.dump(model, model_path)
+    print(f"\n[train_rf] model saved → {model_path}")
+
+    scaler_src = os.path.join(data_dir, "scaler.pkl")
+    scaler_dst = os.path.join(save_dir, "scaler.pkl")
+    shutil.copy2(scaler_src, scaler_dst)
+    print(f"[train_rf] scaler copied → {scaler_dst}")
 
 
 def main():
@@ -85,7 +91,7 @@ def main():
     model = train(X_train, y_train)
 
     evaluate(model, X_test, y_test)
-    save_model(model, args.save_dir)
+    save_model(model, args.save_dir, args.data_dir)
 
 
 if __name__ == "__main__":
